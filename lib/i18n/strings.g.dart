@@ -821,6 +821,8 @@ class _StringsEditorMenuEn {
 	String get watchServerReadOnly => 'Editing is disabled while watching the server';
 	late final _StringsEditorMenuBoxFitsEn boxFits = _StringsEditorMenuBoxFitsEn._(_root);
 	late final _StringsEditorMenuBgPatternsEn bgPatterns = _StringsEditorMenuBgPatternsEn._(_root);
+	String get convertToPageless => 'Convert to a pageless note';
+	String get convertToPaged => 'Convert to a paged note';
 }
 
 // Path: editor.newerFileFormat

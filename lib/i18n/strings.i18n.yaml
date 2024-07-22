@@ -314,6 +314,8 @@ editor:
       staffs: Staffs
       tablature: Tablature
       cornell: Cornell
+    convertToPageless: Convert to a pageless note
+    convertToPaged: Convert to a paged note
   newerFileFormat:
     readOnlyMode: Read-only mode
     title: This note was edited using a newer version of Saber

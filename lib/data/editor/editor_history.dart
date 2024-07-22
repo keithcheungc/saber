@@ -120,6 +120,8 @@ class EditorHistoryItem {
     required this.images,
     this.offset,
     this.page,
+    this.pagesBefore,
+    this.pagesAfter,
     this.quillChange,
     this.colorChange,
   })  : assert(type != EditorHistoryItemType.move || offset != null,
@@ -128,6 +130,11 @@ class EditorHistoryItem {
             'Page must be provided for deletePage'),
         assert(type != EditorHistoryItemType.insertPage || page != null,
             'Page must be provided for insertPage'),
+        assert(
+            type != EditorHistoryItemType.replacePages ||
+                ((pagesBefore?.isNotEmpty ?? false) &&
+                    (pagesAfter?.isNotEmpty ?? false)),
+            'Pages before and after must be provided for replacePages'),
         assert(type != EditorHistoryItemType.quillChange || quillChange != null,
             'Quill change must be provided for quillChange'),
         assert(
@@ -145,6 +152,7 @@ class EditorHistoryItem {
   final List<EditorImage> images;
   final Rect? offset;
   final EditorPage? page;
+  final List<EditorPage>? pagesBefore, pagesAfter;
   final DocChange? quillChange;
   final Map<Stroke, ColorChange>? colorChange;
 
@@ -155,6 +163,8 @@ class EditorHistoryItem {
     List<EditorImage>? images,
     Rect? offset,
     EditorPage? page,
+    List<EditorPage>? pagesBefore,
+    List<EditorPage>? pagesAfter,
     DocChange? quillChange,
     Map<Stroke, ColorChange>? colorChange,
   }) {
@@ -165,6 +175,8 @@ class EditorHistoryItem {
       images: images ?? this.images,
       offset: offset ?? this.offset,
       page: page ?? this.page,
+      pagesBefore: pagesBefore ?? this.pagesBefore,
+      pagesAfter: pagesAfter ?? this.pagesAfter,
       quillChange: quillChange ?? this.quillChange,
       colorChange: colorChange ?? this.colorChange,
     );
@@ -176,6 +188,7 @@ enum EditorHistoryItemType {
   erase,
   deletePage,
   insertPage,
+  replacePages,
   move,
   quillChange,
   quillUndoneChange,

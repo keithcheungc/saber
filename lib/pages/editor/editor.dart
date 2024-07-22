@@ -414,6 +414,9 @@ class EditorState extends State<Editor> {
             page.backgroundImage?.pageIndex = i;
           }
 
+        case EditorHistoryItemType.replacePages:
+          coreInfo.pages = item.pagesBefore!;
+
         case EditorHistoryItemType.move:
           for (Stroke stroke in item.strokes) {
             stroke.shift(Offset(
@@ -471,6 +474,11 @@ class EditorState extends State<Editor> {
         undo(item.copyWith(type: EditorHistoryItemType.insertPage));
       case EditorHistoryItemType.insertPage:
         undo(item.copyWith(type: EditorHistoryItemType.deletePage));
+      case EditorHistoryItemType.replacePages:
+        undo(item.copyWith(
+          pagesBefore: item.pagesAfter,
+          pagesAfter: item.pagesBefore,
+        ));
       case EditorHistoryItemType.move:
         undo(item.copyWith(
             offset: Rect.fromLTRB(
@@ -1743,6 +1751,9 @@ class EditorState extends State<Editor> {
     return EditorBottomSheet(
       invert: invert,
       coreInfo: coreInfo,
+      history: history,
+      undo: undo,
+      redo: redo,
       currentPageIndex: currentPageIndex,
       setBackgroundPattern: (pattern) => setState(() {
         if (coreInfo.readOnly) return;

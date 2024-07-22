@@ -1,11 +1,13 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_quill/flutter_quill.dart';
 import 'package:saber/components/canvas/_canvas_background_painter.dart';
 import 'package:saber/components/canvas/canvas_background_preview.dart';
 import 'package:saber/components/canvas/canvas_image_dialog.dart';
 import 'package:saber/components/canvas/image/editor_image.dart';
 import 'package:saber/components/canvas/inner_canvas.dart';
 import 'package:saber/data/editor/editor_core_info.dart';
+import 'package:saber/data/editor/editor_history.dart';
 import 'package:saber/data/editor/page.dart';
 import 'package:saber/data/prefs.dart';
 import 'package:saber/i18n/extensions/box_fit_localized.dart';
@@ -16,6 +18,9 @@ class EditorBottomSheet extends StatefulWidget {
     super.key,
     required this.invert,
     required this.coreInfo,
+    required this.history,
+    required this.undo,
+    required this.redo,
     required this.currentPageIndex,
     required this.setBackgroundPattern,
     required this.setLineHeight,
@@ -33,6 +38,8 @@ class EditorBottomSheet extends StatefulWidget {
 
   final bool invert;
   final EditorCoreInfo coreInfo;
+  final EditorHistory history;
+  final VoidCallback undo, redo;
   final int? currentPageIndex;
   final void Function(CanvasBackgroundPattern) setBackgroundPattern;
   final void Function(int) setLineHeight;
@@ -311,10 +318,149 @@ class _EditorBottomSheetState extends State<EditorBottomSheet> {
               }),
               const SizedBox(height: 16),
             ],
+            const SizedBox(height: 16),
+            if (widget.coreInfo.pages.isEmpty)
+              ...[]
+            else if (widget.coreInfo.pages.first.size.height.isFinite)
+              ElevatedButton(
+                onPressed: convertToPageless,
+                child: Text(t.editor.menu.convertToPageless),
+              )
+            else
+              ElevatedButton(
+                onPressed: convertToPaged,
+                child: Text(t.editor.menu.convertToPaged),
+              ),
           ],
         ),
       ),
     );
+  }
+
+  /// Convert to a pageless note (i.e. one infinite page)
+  void convertToPageless() {
+    if (widget.history.canRedo &&
+        widget.history.peekRedo().type == EditorHistoryItemType.replacePages) {
+      // If the user undid a pageless conversion, redo it
+      widget.redo();
+      return;
+    }
+
+    final oldPages = widget.coreInfo.pages.toList(growable: false);
+    final newPage = EditorPage(
+      width: double.infinity,
+      height: double.infinity,
+      backgroundImage: widget.coreInfo.pages.first.backgroundImage,
+    );
+
+    double pageTop = 0;
+    for (final oldPage in widget.coreInfo.pages) {
+      for (final oldStroke in oldPage.strokes) {
+        final newStroke = oldStroke.copy();
+        newStroke.page = newPage;
+        newStroke.pageIndex = 0;
+        newStroke.shift(Offset(0, pageTop));
+        newPage.strokes.add(newStroke);
+      }
+      for (final oldImage in oldPage.images) {
+        final newImage = oldImage.copy();
+        newImage.pageIndex = 0;
+        newImage.dstRect.shift(Offset(0, pageTop));
+        newPage.images.add(newImage);
+      }
+      newPage.quill.controller.document.compose(
+        oldPage.quill.controller.document.toDelta(),
+        ChangeSource.local,
+      );
+
+      pageTop += oldPage.size.height;
+    }
+
+    widget.coreInfo.pages
+      ..clear()
+      ..add(newPage);
+    widget.history.recordChange(EditorHistoryItem(
+      type: EditorHistoryItemType.replacePages,
+      pageIndex: 0,
+      strokes: const [],
+      images: const [],
+      pagesBefore: oldPages,
+      pagesAfter: [newPage],
+    ));
+  }
+
+  /// Convert to a paged note (i.e. split the infinite page into multiple pages)
+  void convertToPaged() {
+    if (widget.history.canUndo &&
+        widget.history.peekUndo().type == EditorHistoryItemType.replacePages) {
+      // If the user just did a pageless conversion, undo it
+      widget.undo();
+      return;
+    }
+
+    final oldPage = widget.coreInfo.pages.first;
+    final newPages = <EditorPage>[
+      EditorPage(
+        width: EditorPage.defaultWidth,
+        height: EditorPage.defaultHeight,
+        backgroundImage: oldPage.backgroundImage,
+      ),
+    ];
+
+    const pageWidth = EditorPage.defaultWidth;
+    const pageHeight = EditorPage.defaultHeight;
+
+    for (final oldStroke in oldPage.strokes) {
+      final newStroke = oldStroke.copy();
+
+      newStroke.pageIndex = newStroke.maxY ~/ pageHeight;
+      newStroke.shift(Offset(0, -newStroke.pageIndex * pageHeight));
+
+      while (newStroke.pageIndex > newPages.length) {
+        newPages.add(EditorPage(
+          width: pageWidth,
+          height: pageHeight,
+          backgroundImage: oldPage.backgroundImage,
+        ));
+      }
+      final newPage = newPages[newStroke.pageIndex];
+      newStroke.page = newPage;
+      newPage.strokes.add(newStroke);
+    }
+    for (final oldImage in oldPage.images) {
+      final newImage = oldImage.copy();
+
+      newImage.pageIndex = newImage.dstRect.bottom ~/ pageHeight;
+      newImage.dstRect.shift(Offset(0, -newImage.pageIndex * pageHeight));
+
+      while (newImage.pageIndex > newPages.length) {
+        newPages.add(EditorPage(
+          width: pageWidth,
+          height: pageHeight,
+          backgroundImage: oldPage.backgroundImage,
+        ));
+      }
+      final newPage = newPages[newImage.pageIndex];
+      newPage.images.add(newImage);
+    }
+
+    // Can't separate Quill documents, so just keep it on the first page
+    newPages.first.quill.controller.document.compose(
+      oldPage.quill.controller.document.toDelta(),
+      ChangeSource.local,
+    );
+
+    widget.coreInfo.pages
+      ..clear()
+      ..addAll(newPages);
+    widget.history.recordChange(EditorHistoryItem(
+      type: EditorHistoryItemType.replacePages,
+      pageIndex: 0,
+      strokes: const [],
+      images: const [],
+      pagesBefore: [oldPage],
+      pagesAfter: newPages,
+    ));
   }
 }
 

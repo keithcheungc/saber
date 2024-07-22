@@ -144,8 +144,10 @@ package can be summarised as:
 
 #### Linux
 
-`sudo apt install libsecret-1-dev libjsoncpp-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev`
-`flutter build linux`
+1. Install build dependencies
+    - Ubuntu: `sudo apt install libsecret-1-dev libjsoncpp-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev`
+    - Fedora: `sudo dnf install libsecret-devel jsoncpp-devel gstreamer1-devel gstreamer1-plugins-base-devel`
+2. `flutter build linux`
 
 This is good enough for using on your own computer, but if you want to redistribute your build,
 you need to use a predictable environment: fork this repo and use the GitHub Action

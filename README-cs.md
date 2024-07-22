@@ -142,8 +142,10 @@ se dá shrnout jako:
 
 #### Linux
 
-`sudo apt install libsecret-1-dev libjsoncpp-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev`
-`flutter build linux`
+1. Install build dependencies
+    - Ubuntu/Debian: `sudo apt install libsecret-1-dev libjsoncpp-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev`
+    - Fedora: `sudo dnf install libsecret-devel jsoncpp-devel gstreamer1-devel gstreamer1-plugins-base-devel`
+2. `flutter build linux`
 
 Toto je dostatečné pro použití na vlastním počítači, ale pokud chcete své sestavení distribuovat,
 budete potřebovat použít předvídatelné prostředí: udělejte fork tohoto repozitáře a použijte místo toho GitHub Action

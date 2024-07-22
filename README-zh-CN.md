@@ -140,8 +140,10 @@ flutter pub get
 
 #### Linux
 
-`sudo apt install libsecret-1-dev libjsoncpp-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev`
-`flutter build linux`
+1. Install build dependencies
+    - Ubuntu/Debian: `sudo apt install libsecret-1-dev libjsoncpp-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev`
+    - Fedora: `sudo dnf install libsecret-devel jsoncpp-devel gstreamer1-devel gstreamer1-plugins-base-devel`
+2. `flutter build linux`
 
 这对于在您自己的计算机上使用已经足够好了。但是如果您想重新分发您的构建，你需要使用一个可预测的环境：fork 这个仓库并使用 GitHub Action
 [为 Linux 构建](https://github.com/saber-notes/saber/actions/workflows/linux.yml)。
